@@ -130,4 +130,3 @@ func handleManagement(raw []byte) ([]byte, error) {
 	}
 	return okEnvelope(response)
 }
-

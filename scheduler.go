@@ -30,6 +30,9 @@ func handleUsageRecord(record pluginapi.UsageRecord, cfg pluginConfig, now time.
 		return banEntry{}, nil
 	}
 	activeStore.Set(entry)
+	if errDisable := disableAuthInCPA(entry.AuthID); errDisable != nil {
+		slog.Warn("grok-429-autoban: failed to disable auth in CPA", "auth_id", entry.AuthID, "error", errDisable)
+	}
 	if cfg.PersistState && cfg.StateFile != "" {
 		if err := activeStore.Save(cfg.StateFile); err != nil {
 			slog.Warn("grok-429-autoban: failed to save state", "error", err)

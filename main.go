@@ -44,7 +44,7 @@ import (
 const (
 	pluginName    = "Grok 429 Auto Ban"
 	pluginID      = "grok-429-autoban"
-	pluginVersion = "0.1.1"
+	pluginVersion = "0.1.2"
 )
 
 func handleMethod(method string, request []byte) ([]byte, error) {
@@ -188,4 +188,3 @@ func errorEnvelope(code, message string) []byte {
 	})
 	return raw
 }
-
