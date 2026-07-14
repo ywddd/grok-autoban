@@ -44,24 +44,36 @@ func dispatchManagement(req pluginapi.ManagementRequest) (pluginapi.ManagementRe
 		}
 		authID := strings.TrimSpace(body.AuthID)
 		password := resolveManagementPassword(req.Headers)
-		if errEnable := enableAuthInCPA(authID, password); errEnable != nil {
+		enabled, errEnable := enableAuthInCPAAllowMissing(authID, password)
+		if errEnable != nil {
 			return jsonManagementResponse(http.StatusBadRequest, map[string]string{"error": errEnable.Error()}), nil
 		}
 		removed := activeStore.Delete(authID)
 		saveActiveStore()
-		return jsonManagementResponse(http.StatusOK, map[string]any{"ok": true, "removed": removed, "enabled": true}), nil
+		return jsonManagementResponse(http.StatusOK, map[string]any{
+			"ok":      true,
+			"removed": removed,
+			"enabled": enabled,
+			"missing": !enabled,
+		}), nil
 	case req.Method == http.MethodPost && strings.HasSuffix(req.Path, "/unban-all"):
 		password := resolveManagementPassword(req.Headers)
 		// time.Time{} lists all entries with ResetAt after zero (all future resets).
 		items := activeStore.List(time.Time{})
 		failures := make([]string, 0)
 		enabled := 0
+		missing := 0
 		for _, entry := range items {
-			if errEnable := enableAuthInCPA(entry.AuthID, password); errEnable != nil {
+			wasEnabled, errEnable := enableAuthInCPAAllowMissing(entry.AuthID, password)
+			if errEnable != nil {
 				failures = append(failures, entry.AuthID+": "+errEnable.Error())
 				continue
 			}
-			enabled++
+			if wasEnabled {
+				enabled++
+			} else {
+				missing++
+			}
 			_ = activeStore.Delete(entry.AuthID)
 		}
 		if len(failures) == 0 {
@@ -69,12 +81,13 @@ func dispatchManagement(req pluginapi.ManagementRequest) (pluginapi.ManagementRe
 		}
 		saveActiveStore()
 		status := http.StatusOK
-		if len(failures) > 0 && enabled == 0 {
+		if len(failures) > 0 && enabled == 0 && missing == 0 {
 			status = http.StatusBadRequest
 		}
 		return jsonManagementResponse(status, map[string]any{
 			"ok":       len(failures) == 0,
 			"enabled":  enabled,
+			"missing":  missing,
 			"failed":   len(failures),
 			"failures": failures,
 		}), nil
@@ -242,14 +255,17 @@ async function loadBans() {
   renderPage();
 }
 async function unban(id) {
-  try { await call("/unban",{method:"POST",body:JSON.stringify({auth_id:id})}); }
-  catch (e) { alert(String(e.message||e)); }
+  try {
+    const data = await call("/unban",{method:"POST",body:JSON.stringify({auth_id:id})});
+    if (data && data.missing) alert("账号已不在 CPA 认证列表中，已清除本插件禁用记录");
+  } catch (e) { alert(String(e.message||e)); }
   loadBans();
 }
 async function unbanAll() {
   try {
     const data = await call("/unban-all",{method:"POST",body:"{}"});
     if (data && data.failed) alert("部分解禁失败: "+(data.failures||[]).slice(0,3).join("; "));
+    else if (data && data.missing) alert("已清除 "+data.missing+" 条已删除账号的禁用记录");
   } catch (e) { alert(String(e.message||e)); }
   loadBans();
 }

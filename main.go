@@ -44,7 +44,7 @@ import (
 const (
 	pluginName    = "Grok Auto Ban"
 	pluginID      = "grok-autoban"
-	pluginVersion = "0.1.6"
+	pluginVersion = "0.1.7"
 )
 
 func handleMethod(method string, request []byte) ([]byte, error) {

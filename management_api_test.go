@@ -103,3 +103,54 @@ func TestResolveManagementPasswordPrefersRequestBearer(t *testing.T) {
 		t.Fatalf("env password = %q, want env-password", got)
 	}
 }
+
+func TestEnableAuthInCPAAllowMissingTreats404AsMissing(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"error":"auth file not found"}`))
+	}))
+	defer server.Close()
+
+	oldBaseURL := cpaManagementBaseURL
+	oldDo := cpaManagementDo
+	defer func() {
+		cpaManagementBaseURL = oldBaseURL
+		cpaManagementDo = oldDo
+	}()
+	cpaManagementBaseURL = server.URL
+	cpaManagementDo = server.Client().Do
+
+	enabled, err := enableAuthInCPAAllowMissing("gone.json", "page-password")
+	if err != nil {
+		t.Fatalf("err = %v", err)
+	}
+	if enabled {
+		t.Fatal("expected enabled=false for missing auth file")
+	}
+}
+
+func TestEnableAuthInCPAAllowMissingPropagatesOtherErrors(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"boom"}`))
+	}))
+	defer server.Close()
+
+	oldBaseURL := cpaManagementBaseURL
+	oldDo := cpaManagementDo
+	defer func() {
+		cpaManagementBaseURL = oldBaseURL
+		cpaManagementDo = oldDo
+	}()
+	cpaManagementBaseURL = server.URL
+	cpaManagementDo = server.Client().Do
+
+	enabled, err := enableAuthInCPAAllowMissing("x.json", "page-password")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if enabled {
+		t.Fatal("expected enabled=false")
+	}
+}
+

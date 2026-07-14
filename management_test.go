@@ -126,3 +126,40 @@ func managementRequest(method, path string, body []byte) pluginapi.ManagementReq
 		Body:   body,
 	}
 }
+
+
+func TestManagementUnbanMissingAuthFileClearsBan(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"error":"auth file not found"}`))
+	}))
+	defer server.Close()
+	oldBaseURL := cpaManagementBaseURL
+	oldDo := cpaManagementDo
+	cpaManagementBaseURL = server.URL
+	cpaManagementDo = server.Client().Do
+	defer func() {
+		cpaManagementBaseURL = oldBaseURL
+		cpaManagementDo = oldDo
+	}()
+
+	oldStore := activeStore
+	activeStore = newBanStore()
+	defer func() { activeStore = oldStore }()
+	activeStore.Set(testEntry("gone.json", time.Now().Add(time.Hour)))
+
+	unban := managementRequest(http.MethodPost, "/unban", []byte(`{"auth_id":"gone.json"}`))
+	unban.Headers = http.Header{"Authorization": []string{"Bearer page-password"}}
+	response, err := dispatchManagement(unban)
+	if err != nil || response.StatusCode != http.StatusOK {
+		t.Fatalf("unban response = %#v err=%v body=%s", response, err, string(response.Body))
+	}
+	body := string(response.Body)
+	if !strings.Contains(body, `"missing":true`) || !strings.Contains(body, `"removed":true`) {
+		t.Fatalf("body = %s", body)
+	}
+	if _, ok := activeStore.Get("gone.json"); ok {
+		t.Fatal("ban record should be cleared when auth file is missing")
+	}
+}
+

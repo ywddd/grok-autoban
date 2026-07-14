@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -68,8 +69,39 @@ func disableAuthInCPA(authID string) error {
 	return setAuthDisabledInCPA(authID, true, cpaManagementPassword())
 }
 
+// errAuthFileNotFound means the credential no longer exists in CPA.
+// Unban should still clear the local ban record in this case.
+var errAuthFileNotFound = errors.New("auth file not found")
+
 func enableAuthInCPA(authID string, password string) error {
 	return setAuthDisabledInCPA(authID, false, password)
+}
+
+// enableAuthInCPAAllowMissing re-enables an account. If the auth file is already
+// gone from CPA, it returns enabled=false with a nil error so callers can drop
+// the local ban record.
+func enableAuthInCPAAllowMissing(authID string, password string) (enabled bool, err error) {
+	err = enableAuthInCPA(authID, password)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, errAuthFileNotFound) {
+		return false, nil
+	}
+	return false, err
+}
+
+func isAuthFileNotFoundResponse(statusCode int, raw []byte) bool {
+	if statusCode == http.StatusNotFound {
+		return true
+	}
+	body := strings.ToLower(strings.TrimSpace(string(raw)))
+	if body == "" {
+		return false
+	}
+	return strings.Contains(body, "auth file not found") ||
+		strings.Contains(body, `"error":"auth file not found"`) ||
+		strings.Contains(body, "file not found")
 }
 
 func setAuthDisabledInCPA(authID string, disabled bool, password string) error {
@@ -114,6 +146,9 @@ func setAuthDisabledInCPA(authID string, disabled bool, password string) error {
 		return errRead
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if isAuthFileNotFoundResponse(resp.StatusCode, raw) {
+			return fmt.Errorf("%w: %s", errAuthFileNotFound, strings.TrimSpace(string(raw)))
+		}
 		return fmt.Errorf("CPA management API returned HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(raw)))
 	}
 	return nil
