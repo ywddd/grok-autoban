@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"grok-429-autoban/cpasdk/pluginapi"
+	"grok-autoban/cpasdk/pluginapi"
 )
 
 const realGrok429Body = `{"code":"subscription:free-usage-exhausted","error":"You've used all the included free usage for model grok-4.5-build-free for now. Usage resets over a rolling 24-hour window — tokens (actual/limit): 2050798/2000000. Upgrade to a Grok subscription for higher limits: https://grok.com/supergrok"}`

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"grok-429-autoban/cpasdk/pluginapi"
+	"grok-autoban/cpasdk/pluginapi"
 )
 
 type managementHandler struct{}
@@ -198,7 +198,7 @@ async function call(path, options={}) {
     "Authorization":"Bearer "+keyInput.value,
     "Content-Type":"application/json"
   });
-  const r = await fetch("/v0/management/plugins/grok-429-autoban"+path, options);
+  const r = await fetch("/v0/management/plugins/grok-autoban"+path, options);
   const data = await r.json();
   if (!r.ok) throw new Error((data && (data.error||data.message)) || ("HTTP "+r.status));
   return data;

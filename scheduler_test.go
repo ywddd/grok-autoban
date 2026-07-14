@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"grok-429-autoban/cpasdk/pluginapi"
+	"grok-autoban/cpasdk/pluginapi"
 )
 
 func TestSchedulerFiltersActiveGrokBans(t *testing.T) {

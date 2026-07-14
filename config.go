@@ -98,16 +98,16 @@ func configure(raw []byte) error {
 	currentConfig.Store(cfg)
 	if cfg.PersistState && cfg.StateFile != "" {
 		if err := activeStore.Load(cfg.StateFile, time.Now()); err != nil {
-			slog.Warn("grok-429-autoban: failed to load state", "error", err)
+			slog.Warn("grok-autoban: failed to load state", "error", err)
 		}
 	}
 	// Free-usage 429 is owned by CPA Manager Plus. Drop legacy quota bans so this
 	// plugin only tracks 401/403 permanent disables going forward.
 	if purged := purgeLegacyQuotaBans(); purged > 0 {
-		slog.Info("grok-429-autoban: purged legacy free-usage-exhausted bans", "count", purged)
+		slog.Info("grok-autoban: purged legacy free-usage-exhausted bans", "count", purged)
 		if cfg.PersistState && cfg.StateFile != "" {
 			if err := activeStore.Save(cfg.StateFile); err != nil {
-				slog.Warn("grok-429-autoban: failed to save state after purging legacy bans", "error", err)
+				slog.Warn("grok-autoban: failed to save state after purging legacy bans", "error", err)
 			}
 		}
 	}
@@ -126,7 +126,7 @@ func purgeLegacyQuotaBans() int {
 		if err := enableAuthInCPA(entry.AuthID, ""); err != nil {
 			// Startup may race the management API. Keep a past ResetAt so the next
 			// scheduler pick retries enableAuthInCPA via the expired-ban path.
-			slog.Warn("grok-429-autoban: failed to re-enable legacy quota ban; will retry on schedule", "auth_id", entry.AuthID, "error", err)
+			slog.Warn("grok-autoban: failed to re-enable legacy quota ban; will retry on schedule", "auth_id", entry.AuthID, "error", err)
 			entry.ResetAt = now.Add(-time.Second)
 			entry.ResetSource = "legacy_quota_handoff"
 			activeStore.Set(entry)

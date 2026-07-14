@@ -2,13 +2,13 @@
   "schema_version": 1,
   "plugins": [
     {
-      "id": "grok-429-autoban",
-      "name": "Grok 429 Auto Ban",
+      "id": "grok-autoban",
+      "name": "Grok Auto Ban",
       "description": "Grok 权限拒绝 403 或认证失败 401 时自动禁用账号，需手动解禁。免费额度 429 请交给 CPA Manager Plus Provider 额度冷却。",
       "author": "ywddd",
-      "version": "0.1.5",
-      "repository": "https://github.com/ywddd/grok-429-autoban",
-      "homepage": "https://github.com/ywddd/grok-429-autoban",
+      "version": "0.1.6",
+      "repository": "https://github.com/ywddd/grok-autoban",
+      "homepage": "https://github.com/ywddd/grok-autoban",
       "license": "MIT",
       "tags": ["grok", "xai", "scheduler", "usage", "management"]
     }

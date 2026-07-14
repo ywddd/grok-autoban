@@ -105,7 +105,7 @@ func (s *banStore) Save(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
-	temp, err := os.CreateTemp(filepath.Dir(path), ".grok-429-autoban-*.tmp")
+	temp, err := os.CreateTemp(filepath.Dir(path), ".grok-autoban-*.tmp")
 	if err != nil {
 		return err
 	}

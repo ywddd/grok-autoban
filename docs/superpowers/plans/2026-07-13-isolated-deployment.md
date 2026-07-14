@@ -1,8 +1,8 @@
-# Grok 429 Auto Ban Isolated Deployment Implementation Plan
+# Grok Auto Ban Isolated Deployment Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Safely validate and install `grok-429-autoban` on the production CPA instance without rewriting existing UTF-8 configuration through Windows text APIs.
+**Goal:** Safely validate and install `grok-autoban` on the production CPA instance without rewriting existing UTF-8 configuration through Windows text APIs.
 
 **Architecture:** Add a byte-preserving configuration helper and test it locally, then use the same helper to create a disposable canary CPA configuration on the NAS. Load the candidate plugin in a canary container using the production image, verify registration and management behavior, and only then apply the proven artifacts to production with an automatic rollback path.
 
@@ -33,7 +33,7 @@ def test_enable_preserves_existing_bytes():
     original = FIXTURE.encode("utf-8")
     updated = configure(original, enabled=True)
     assert "英伟达".encode("utf-8") in updated
-    assert updated.count(b"    grok-429-autoban:\n") == 1
+    assert updated.count(b"    grok-autoban:\n") == 1
 
 
 def test_enable_is_idempotent():
@@ -66,12 +66,12 @@ anchors. Do not decode or re-encode the full CPA file. Insert this exact block
 immediately before the next four-space plugin key after `grok-inspection`:
 
 ```yaml
-    grok-429-autoban:
+    grok-autoban:
       enabled: true
       priority: 100
       fallback_hours: 24
       persist_state: true
-      state_file: plugins/data/grok-429-autoban/bans.json
+      state_file: plugins/data/grok-autoban/bans.json
       log_matches: true
 ```
 
@@ -106,7 +106,7 @@ git commit -m "fix: preserve CPA config bytes during plugin setup"
 
 **Files:**
 - Verify: `*.go`
-- Verify: `plugins-disabled/grok-429-autoban.so` on the NAS
+- Verify: `plugins-disabled/grok-autoban.so` on the NAS
 
 - [ ] **Step 1: Run the full plugin test suite**
 
@@ -126,9 +126,9 @@ On the NAS, mount `/volume1/docker/cpa` at `/src` and run:
 ```bash
 docker run --rm \
   -v /volume1/docker/cpa:/src \
-  -w /src/plugins-src/grok-429-autoban \
+  -w /src/plugins-src/grok-autoban \
   docker.m.daocloud.io/library/golang:1.26-bookworm \
-  bash /src/plugins-src/grok-429-autoban/docker-build.sh
+  bash /src/plugins-src/grok-autoban/docker-build.sh
 ```
 
 Write the result to the quarantine location first, not the production plugin
@@ -139,7 +139,7 @@ directory. Confirm `file` reports an x86-64 ELF shared object.
 Run:
 
 ```bash
-sha256sum /volume1/docker/cpa/plugins-disabled/grok-429-autoban.so
+sha256sum /volume1/docker/cpa/plugins-disabled/grok-autoban.so
 ```
 
 Expected: one SHA-256 checksum for the candidate artifact.
@@ -152,7 +152,7 @@ Expected: one SHA-256 checksum for the candidate artifact.
 - [ ] **Step 1: Implement canary preparation**
 
 The script must create
-`/volume1/docker/cpa/canary/grok-429-autoban`, copy production configuration and
+`/volume1/docker/cpa/canary/grok-autoban`, copy production configuration and
 auth data, create a dedicated plugin tree, and copy existing production plugins
 plus the candidate plugin. It must call `configure_plugin.py enable` on the
 canary copy only.
@@ -179,7 +179,7 @@ password through the environment, and use restart policy `no`.
 - [ ] **Step 3: Implement canary cleanup**
 
 Support `stop` and `clean` commands. `clean` must refuse to remove any path
-outside `/volume1/docker/cpa/canary/grok-429-autoban`.
+outside `/volume1/docker/cpa/canary/grok-autoban`.
 
 - [ ] **Step 4: Shell syntax check and commit**
 
@@ -213,8 +213,8 @@ Check container state twice at least 10 seconds apart. Both checks must report
 `running` and restart count `0`. Logs must contain:
 
 ```text
-plugin loaded plugin_id=grok-429-autoban
-plugin registered plugin_id=grok-429-autoban
+plugin loaded plugin_id=grok-autoban
+plugin registered plugin_id=grok-autoban
 API server started successfully
 ```
 
@@ -224,8 +224,8 @@ Confirm:
 
 ```text
 GET /v1/models                                             -> 200
-GET /v0/resource/plugins/grok-429-autoban/status           -> 200
-GET /v0/management/plugins/grok-429-autoban/bans           -> 200 JSON
+GET /v0/resource/plugins/grok-autoban/status           -> 200
+GET /v0/management/plugins/grok-autoban/bans           -> 200 JSON
 ```
 
 Use the existing API key for `/v1/models` and the management password for the
@@ -256,7 +256,7 @@ still returns the entry. Clear it through `unban-all` afterward.
 
 **Files:**
 - Modify: `/volume1/docker/cpa/config.yaml`
-- Install: `/volume1/docker/cpa/plugins/linux/amd64/grok-429-autoban.so`
+- Install: `/volume1/docker/cpa/plugins/linux/amd64/grok-autoban.so`
 
 - [ ] **Step 1: Create byte-for-byte production backups**
 
@@ -277,7 +277,7 @@ Restart only `cli-proxy-api`. Check twice at least 10 seconds apart:
 container state = running
 restart count = 0
 /v1/models = HTTP 200
-logs include grok-429-autoban loaded and registered
+logs include grok-autoban loaded and registered
 bans management endpoint = HTTP 200 JSON
 ```
 

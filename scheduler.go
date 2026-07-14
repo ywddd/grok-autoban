@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"grok-429-autoban/cpasdk/pluginabi"
-	"grok-429-autoban/cpasdk/pluginapi"
+	"grok-autoban/cpasdk/pluginabi"
+	"grok-autoban/cpasdk/pluginapi"
 )
 
 var activeStore = newBanStore()
@@ -31,11 +31,11 @@ func handleUsageRecord(record pluginapi.UsageRecord, cfg pluginConfig, now time.
 	}
 	activeStore.Set(entry)
 	if errDisable := disableAuthInCPA(entry.AuthID); errDisable != nil {
-		slog.Warn("grok-429-autoban: failed to disable auth in CPA", "auth_id", entry.AuthID, "error", errDisable)
+		slog.Warn("grok-autoban: failed to disable auth in CPA", "auth_id", entry.AuthID, "error", errDisable)
 	}
 	if cfg.PersistState && cfg.StateFile != "" {
 		if err := activeStore.Save(cfg.StateFile); err != nil {
-			slog.Warn("grok-429-autoban: failed to save state", "error", err)
+			slog.Warn("grok-autoban: failed to save state", "error", err)
 		}
 	}
 	return entry, nil
@@ -44,7 +44,7 @@ func handleUsageRecord(record pluginapi.UsageRecord, cfg pluginConfig, now time.
 func pickCandidate(req pluginapi.SchedulerPickRequest, store *banStore, now time.Time) pluginapi.SchedulerPickResponse {
 	for _, authID := range store.Expired(now) {
 		if errEnable := enableAuthInCPA(authID, ""); errEnable != nil {
-			slog.Warn("grok-429-autoban: failed to re-enable expired auth in CPA", "auth_id", authID, "error", errEnable)
+			slog.Warn("grok-autoban: failed to re-enable expired auth in CPA", "auth_id", authID, "error", errEnable)
 			continue
 		}
 		store.Delete(authID)

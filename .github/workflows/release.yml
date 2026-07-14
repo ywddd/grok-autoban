@@ -89,13 +89,13 @@ jobs:
           go build \
             -buildvcs=false \
             -buildmode=c-shared \
-            -o "grok-429-autoban.${{ matrix.ext }}" \
+            -o "grok-autoban.${{ matrix.ext }}" \
             .
 
       - name: Verify target platform
         shell: bash
         run: |
-          go version -m "grok-429-autoban.${{ matrix.ext }}" | tee build-info.txt
+          go version -m "grok-autoban.${{ matrix.ext }}" | tee build-info.txt
           grep -q "GOOS=${{ matrix.goos }}" build-info.txt
           grep -q "GOARCH=${{ matrix.goarch }}" build-info.txt
 
@@ -103,8 +103,8 @@ jobs:
         id: package
         shell: pwsh
         run: |
-          $asset = "grok-429-autoban_${{ steps.release.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
-          Compress-Archive -Path "grok-429-autoban.${{ matrix.ext }}" -DestinationPath $asset -Force
+          $asset = "grok-autoban_${{ steps.release.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
+          Compress-Archive -Path "grok-autoban.${{ matrix.ext }}" -DestinationPath $asset -Force
           "asset=$asset" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Upload build artifact
@@ -156,7 +156,7 @@ jobs:
             gh release upload "${RELEASE_TAG}" assets/*.zip assets/checksums.txt --clobber
           else
             gh release create "${RELEASE_TAG}" \
-              --title "Grok 429 Auto Ban ${RELEASE_TAG}" \
+              --title "Grok Auto Ban ${RELEASE_TAG}" \
               --generate-notes \
               assets/*.zip \
               assets/checksums.txt

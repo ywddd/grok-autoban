@@ -17,8 +17,8 @@ if (-not $env:CC) {
     throw "A C compiler was not found. Install MinGW-w64 or LLVM-MinGW."
 }
 
-& $go.Source build -buildmode=c-shared -o "grok-429-autoban.dll" .
+& $go.Source build -buildmode=c-shared -o "grok-autoban.dll" .
 if ($LASTEXITCODE -ne 0) {
     throw "DLL build failed."
 }
-Write-Host "Built $(Resolve-Path .\grok-429-autoban.dll)"
+Write-Host "Built $(Resolve-Path .\grok-autoban.dll)"

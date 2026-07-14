@@ -1,3 +1,3 @@
-module grok-429-autoban
+module grok-autoban
 
 go 1.21

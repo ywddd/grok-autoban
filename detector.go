@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"grok-429-autoban/cpasdk/pluginapi"
+	"grok-autoban/cpasdk/pluginapi"
 )
 
 const (
